@@ -6,7 +6,6 @@ import java.util.Scanner;
 
 public class ClientInterface {
 
-
   private static final String LOG_OFF = "logoff";
   private static final String WHO = "who";
   private static final String DM_USER = "@user";
@@ -17,6 +16,7 @@ public class ClientInterface {
   private DataOutputStream out;
   private DataInputStream in;
   private ClientChatroomProtocol protocol;
+  private boolean running = true;
 
   public ClientInterface(String hostName, int portNumber, String clientName) {
     this.HOST_NAME = hostName;
@@ -29,7 +29,11 @@ public class ClientInterface {
   public static void main(String[] args) throws IOException {
     Scanner scanner = new Scanner(System.in);
     String line;
-    ClientInterface ci = new ClientInterface("localhost", 3000, "Bob");
+    ClientInterface ci = new ClientInterface("localhost", 3000, "Bobb");
+    while (ci.running) {
+      line = scanner.nextLine();
+      ci.commandParser(line);
+    }
   }
 
   private void connect() {
@@ -49,6 +53,7 @@ public class ClientInterface {
 
   private void logOff() throws IOException {
     protocol.logOff(CLIENT_NAME);
+    running = false;
   }
 
   private void listAllUsers(String username) throws IOException {
@@ -68,23 +73,27 @@ public class ClientInterface {
   }
 
   private void help() {
-
+    System.out.println("Use logoff to logoff");
+    System.out.println("Use who to see the connected users");
+    System.out.println("Use @user [username] [message] to send a direct message to a user");
+    System.out.println("Use !user [username] to send an insult to a user");
   }
 
   private void commandParser(String command) throws IOException {
-    String[] commandArr = command.split(" ");
     if (command.startsWith(LOG_OFF)) {
       logOff();
     } else if (command.startsWith(WHO)) {
       listAllUsers(CLIENT_NAME);
     } else if (command.startsWith(DM_USER)) {
-      directMessage(commandArr[1], commandArr[2], commandArr[3]);
+      String[] commandArr = command.split(" ", 3);
+      directMessage(CLIENT_NAME, commandArr[1], commandArr[2]);
     } else if (command.startsWith(INSULT)) {
-      sendInsult(commandArr[1], commandArr[2]);
+      String[] commandArr = command.split(" ", 2);
+      sendInsult(CLIENT_NAME, commandArr[1]);
     } else if (command.startsWith("?")) {
       help();
     } else {
-      broadcastMessage(commandArr[0], commandArr[1]);
+      broadcastMessage(CLIENT_NAME, command);
     }
   }
 

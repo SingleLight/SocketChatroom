@@ -40,6 +40,7 @@ public class ChatroomServer {
       System.out.println("A port should be provided when running the server");
       System.exit(1);
     }
+    ConcurrentHashMap<String, DataOutputStream> sharedBuffers = new ConcurrentHashMap<>();
     int portNumber = Integer.parseInt(args[0]);
     boolean listening = true;
 
@@ -50,7 +51,7 @@ public class ChatroomServer {
       while (listening) {
         System.out.println("The server is listening on port " + portNumber);
         Socket socket = serverSocket.accept();
-        Thread newConnection = new Thread(new ChatroomServerThread(new ConcurrentHashMap<>(), socket));
+        Thread newConnection = new Thread(new ChatroomServerThread(sharedBuffers, socket));
         executor.submit(newConnection);
       }
     }

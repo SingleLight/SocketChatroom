@@ -9,7 +9,7 @@ public class InsultGenerator {
   "I'll explain and I'll use small words so that you'll be sure to understand, you warthog-faced buffoon.",
   "Don't look now, but there's one man too many in this room and I think it's you."};
 
-  public String randomInsult() {
+  public static String randomInsult() {
     return insultList[rand.nextInt(5)];
   }
 

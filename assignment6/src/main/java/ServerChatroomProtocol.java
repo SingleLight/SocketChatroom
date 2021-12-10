@@ -1,10 +1,8 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerChatroomProtocol {
@@ -18,10 +16,10 @@ public class ServerChatroomProtocol {
   private static final int DIRECT_MESSAGE = 25;
   private static final int FAIL_MESSAGE = 26;
   private static final int SEND_INSULT = 27;
-  private boolean running = true;
   private final DataInputStream in;
   private final DataOutputStream out;
   private final ConcurrentHashMap<String, DataOutputStream> sharedBuffers;
+  private boolean running = true;
 
   public ServerChatroomProtocol(DataInputStream in, DataOutputStream out,
       ConcurrentHashMap<String, DataOutputStream> sharedBuffers) {
@@ -51,6 +49,7 @@ public class ServerChatroomProtocol {
         case QUERY_CONNECTED_USERS -> processQueryUsers();
         case DIRECT_MESSAGE -> processDirectMessage();
         case BROADCAST_MESSAGE -> processBroadcastMessage();
+        case SEND_INSULT -> processSendInsult();
       }
     }
   }
@@ -59,12 +58,10 @@ public class ServerChatroomProtocol {
       throws IOException {
     in.readChar();
     int usernameSize = in.readInt();
-    System.out.println(usernameSize);
     in.readChar();
     byte[] username = new byte[usernameSize];
     in.read(username);
     String name = new String(username, StandardCharsets.UTF_8);
-    System.out.println(name);
     boolean success = false;
     String message = "";
 
@@ -74,6 +71,7 @@ public class ServerChatroomProtocol {
     } else {
       sharedBuffers.put(name, out);
       success = true;
+      System.out.println(sharedBuffers.containsKey("Bob"));
       message =
           "Connection successful " + name + ", there are " + (sharedBuffers.keySet().size() - 1)
               + " other connected clients.";
@@ -95,7 +93,7 @@ public class ServerChatroomProtocol {
     int usernameSize = in.readInt();
     in.readChar();
     byte[] usernameInBytes = new byte[usernameSize];
-    in.read(usernameInBytes, 0, usernameSize);
+    in.read(usernameInBytes);
     String username = new String(usernameInBytes);
     boolean correctUsername = this.sharedBuffers.containsKey(username);
     synchronized (out) {
@@ -107,6 +105,7 @@ public class ServerChatroomProtocol {
         out.writeInt(messageBytes.length);
         out.writeChar(' ');
         out.write(messageBytes);
+        running = false;
       } else {
         String message = "Failure! You are not disconnected due to incorrectly provided username";
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
@@ -123,26 +122,25 @@ public class ServerChatroomProtocol {
     in.readChar();
     byte[] usernameInBytes = new byte[usernameSize];
     in.read(usernameInBytes);
-    byte[] sender = "Server".getBytes(StandardCharsets.UTF_8);
-    synchronized (out) {
-      out.write(DIRECT_MESSAGE);
-      out.writeChar(' ');
-      out.writeInt(sender.length);
-      out.writeChar(' ');
-      out.write(sender);
-      out.writeChar(' ');
-      out.writeInt(usernameSize);
-      out.writeChar(' ');
-      out.write(usernameInBytes);
-      StringBuilder output = new StringBuilder();
-      for (String key : sharedBuffers.keySet()) {
-        output.append(key).append(' ');
+    String username = new String(usernameInBytes);
+    ArrayList<String> users = new ArrayList<>();
+    for (String key : sharedBuffers.keySet()) {
+      if (!key.equals(username)){
+        users.add(key);
       }
-      byte[] outputInBytes = output.toString().getBytes(StandardCharsets.UTF_8);
+    }
+    synchronized (out) {
+      out.writeInt(QUERY_USER_RESPONSE);
       out.writeChar(' ');
-      out.writeInt(outputInBytes.length);
+      int numberOfOtherUsers = users.size();
+      out.writeInt(numberOfOtherUsers);
       out.writeChar(' ');
-      out.write(outputInBytes);
+      for (String user : users) {
+        out.writeInt(user.getBytes(StandardCharsets.UTF_8).length);
+        out.writeChar(' ');
+        out.write(user.getBytes(StandardCharsets.UTF_8));
+        out.writeChar(' ');
+      }
     }
   }
 
@@ -151,41 +149,24 @@ public class ServerChatroomProtocol {
     int fromUsernameSize = in.readInt();
     in.readChar();
     byte[] fromUsernameInBytes = new byte[fromUsernameSize];
-    in.readChar();
-    in.read(fromUsernameInBytes, 0, fromUsernameSize);
+    in.read(fromUsernameInBytes);
     in.readChar();
     int toUsernameSize = in.readInt();
     in.readChar();
     byte[] toUsernameInBytes = new byte[toUsernameSize];
+    in.read(toUsernameInBytes);
     in.readChar();
     int messageSize = in.readInt();
     in.readChar();
+    System.out.println("reached");
     byte[] messageInBytes = new byte[messageSize];
-    in.read(messageInBytes, 0, messageSize);
-
+    in.read(messageInBytes);
+    System.out.println(new String(toUsernameInBytes) + "wow");
     if (sharedBuffers.containsKey(new String(toUsernameInBytes))) {
-      DataOutputStream directOut = sharedBuffers.get(new String(toUsernameInBytes));
-      synchronized (directOut) {
-        directOut.write(DIRECT_MESSAGE);
-        directOut.writeChar(' ');
-        directOut.writeInt(fromUsernameSize);
-        directOut.writeChar(' ');
-        directOut.write(fromUsernameInBytes);
-        directOut.writeChar(' ');
-        directOut.writeInt(toUsernameSize);
-        directOut.writeChar(' ');
-        directOut.writeInt(messageSize);
-        directOut.writeChar(' ');
-        directOut.write(messageInBytes, 0, messageSize);
-      }
+      sendDirectMessage(new String(fromUsernameInBytes), new String(toUsernameInBytes), new String(messageInBytes));
     } else {
-      out.writeInt(FAIL_MESSAGE);
       String failureMessage = "The username you provided is not correct";
-      byte[] failureMessageInBytes = failureMessage.getBytes(StandardCharsets.UTF_8);
-      out.writeChar(' ');
-      out.write(failureMessageInBytes.length);
-      out.writeChar(' ');
-      out.write(failureMessageInBytes, 0, failureMessageInBytes.length);
+      sendFailedMessage(new String(toUsernameInBytes), failureMessage);
     }
   }
 
@@ -201,26 +182,67 @@ public class ServerChatroomProtocol {
     in.readChar();
     byte[] messageInBytes = new byte[messageSize];
     in.read(messageInBytes, 0, messageSize);
+    sendBroadcastMessage(new String(fromUsernameInByte), new String(messageInBytes));
+  }
 
+  public void processSendInsult() throws IOException {
+    in.readChar();
+    int fromUsernameSize = in.readInt();
+    in.readChar();
+    byte[] fromUsernameInBytes = new byte[fromUsernameSize];
+    in.read(fromUsernameInBytes);
+    in.readChar();
+    int toUsernameSize = in.readInt();
+    in.readChar();
+    byte[] toUsernameInBytes = new byte[toUsernameSize];
+    in.read(toUsernameInBytes);
+    in.readChar();
+
+    String toUsername = new String(toUsernameInBytes);
+    if (!sharedBuffers.containsKey(toUsername)) {
+      String failure = "the provided username is incorrect";
+      sendFailedMessage(new String(fromUsernameInBytes), failure);
+    } else {
+      String insult = new String(fromUsernameInBytes) + " -> " + new String(toUsernameInBytes)
+          + InsultGenerator.randomInsult();
+      sendBroadcastMessage(new String(fromUsernameInBytes), insult);
+    }
+  }
+
+  public void sendFailedMessage(String to, String message) throws IOException {
+    DataOutputStream out = sharedBuffers.get(to);
+    synchronized (out) {
+      out.writeInt(FAIL_MESSAGE);
+      out.writeChar(' ');
+      out.writeInt(message.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(message.getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  public void sendDirectMessage(String from, String to, String message) throws IOException {
+    DataOutputStream out = sharedBuffers.get(to);
+    synchronized (out) {
+      out.writeInt(DIRECT_MESSAGE);
+      out.writeChar(' ');
+      out.writeInt(from.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(from.getBytes(StandardCharsets.UTF_8));
+      out.writeChar(' ');
+      out.writeInt(to.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(to.getBytes(StandardCharsets.UTF_8));
+      out.writeChar(' ');
+      out.writeInt(message.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(message.getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  public void sendBroadcastMessage(String from, String message) throws IOException {
     for (String key : sharedBuffers.keySet()) {
-      DataOutputStream broadcastOutput = sharedBuffers.get(key);
-      synchronized (broadcastOutput) {
-        broadcastOutput.write(DIRECT_MESSAGE);
-        broadcastOutput.writeChar(' ');
-        String from = "Server";
-        byte[] fromInBytes = from.getBytes(StandardCharsets.UTF_8);
-        broadcastOutput.write(fromInBytes.length);
-        broadcastOutput.writeChar(' ');
-        broadcastOutput.write(fromInBytes, 0, fromInBytes.length);
-        broadcastOutput.write(' ');
-        broadcastOutput.writeInt(key.getBytes().length);
-        broadcastOutput.writeChar(' ');
-        broadcastOutput.write(key.getBytes(StandardCharsets.UTF_8), 0,
-            key.getBytes(StandardCharsets.UTF_8).length);
-        broadcastOutput.writeChar(' ');
-        broadcastOutput.writeInt(messageSize);
-        broadcastOutput.write(' ');
-        broadcastOutput.write(messageInBytes, 0, messageSize);
+      if (!key.equals(from)) {
+        sendDirectMessage(from, key, message);
       }
     }
   }

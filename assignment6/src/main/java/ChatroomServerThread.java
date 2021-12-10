@@ -21,8 +21,8 @@ public class ChatroomServerThread implements Runnable {
   @Override
   public void run() {
     try {
-      System.out.println("123");
       protocol.serverProcess();
+      socket.close();
     } catch (IOException e) {
       e.printStackTrace();
     }

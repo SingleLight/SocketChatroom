@@ -29,17 +29,18 @@ public class ClientChatroomProtocol {
     this.socket = socket;
   }
 
-  public synchronized void clientProcess() throws IOException {
+  public void clientProcess() throws IOException {
     while (running) {
       int messageType = in.readInt();
       switch (messageType) {
         case CONNECT_RESPONSE -> processConnectResponse();
         case DIRECT_MESSAGE -> processDirectMessage();
+        case QUERY_USER_RESPONSE -> processQueryUsers();
       }
     }
   }
 
-  private synchronized boolean processConnectResponse() throws IOException {
+  private boolean processConnectResponse() throws IOException {
     if (myState == state.NOT_CONNECTED) {
       in.readChar();
       boolean isConnected = in.readBoolean();
@@ -63,9 +64,6 @@ public class ClientChatroomProtocol {
       String message = new String(messageInBytes);
       System.out.println(message);
       if (message.startsWith("Success")) {
-        in.close();
-        out.close();
-        socket.close();
         running = false;
         this.myState = state.NOT_CONNECTED;
         System.exit(0);
@@ -76,7 +74,7 @@ public class ClientChatroomProtocol {
     }
   }
 
-  private synchronized void processDirectMessage() throws IOException {
+  private void processDirectMessage() throws IOException {
     in.readChar();
     int fromUsernameSize = in.readInt();
     in.readChar();
@@ -95,78 +93,107 @@ public class ClientChatroomProtocol {
     System.out.println("Message from" + new String(fromUsernameInBytes) + " to " + new String(toUsernameInBytes) + " : " + new String(messageInBytes));
   }
 
-  public synchronized void connect(String username) throws IOException {
-    out.writeInt(CONNECT_MESSAGE);
-    out.writeChar(' ');
-    byte[] usernameInBytes = username.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(usernameInBytes.length);
-    out.writeChar(' ');
-    out.write(usernameInBytes);
+  private void processQueryUsers() throws IOException {
+    in.readChar();
+    int numberOfOtherUsers = in.readInt();
+    in.readChar();
+    StringBuilder allTheUsers = new StringBuilder("Users: ");
+    for (int i = 0; i < numberOfOtherUsers; i++) {
+      int usernameSize = in.readInt();
+      in.readChar();
+      byte[] usernameInBytes = new byte[usernameSize];
+      in.read(usernameInBytes);
+      in.readChar();
+      allTheUsers.append(new String(usernameInBytes)).append(" ");
+    }
+    System.out.println(allTheUsers);
+  }
+
+  public void connect(String username) throws IOException {
+    synchronized (out) {
+      out.writeInt(CONNECT_MESSAGE);
+      out.writeChar(' ');
+      byte[] usernameInBytes = username.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(usernameInBytes.length);
+      out.writeChar(' ');
+      out.write(usernameInBytes);
+    }
     usernameToBe = username;
   }
 
-  public synchronized void logOff(String name) throws IOException {
-    out.writeInt(DISCONNECT_MESSAGE);
-    out.writeChar(' ');
-    byte[] usernameInBytes = name.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(usernameInBytes.length);
-    out.writeChar(' ');
-    out.write(usernameInBytes);
+  public void logOff(String name) throws IOException {
+    synchronized (out) {
+      out.writeInt(DISCONNECT_MESSAGE);
+      out.writeChar(' ');
+      byte[] usernameInBytes = name.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(usernameInBytes.length);
+      out.writeChar(' ');
+      out.write(usernameInBytes);
+    }
   }
 
-  public synchronized void listAllUsers(String username) throws IOException {
-    out.writeInt(QUERY_CONNECTED_USERS);
-    out.writeChar(' ');
-    byte[] usernameInBytes = username.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(usernameInBytes.length);
-    out.writeChar(' ');
-    out.write(usernameInBytes);
+  public void listAllUsers(String username) throws IOException {
+    synchronized (out) {
+      out.writeInt(QUERY_CONNECTED_USERS);
+      out.writeChar(' ');
+      byte[] usernameInBytes = username.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(usernameInBytes.length);
+      out.writeChar(' ');
+      out.write(usernameInBytes);
+    }
   }
 
-  public synchronized void directMessage(String from, String to, String message)
+  public void directMessage(String from, String to, String message)
       throws IOException {
-    out.writeInt(DIRECT_MESSAGE);
-    out.writeChar(' ');
-    byte[] fromBytes = from.getBytes(StandardCharsets.UTF_8);
-    byte[] toBytes = to.getBytes(StandardCharsets.UTF_8);
-    byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(fromBytes.length);
-    out.writeChar(' ');
-    out.write(fromBytes);
-    out.writeChar(' ');
-    out.writeInt(toBytes.length);
-    out.writeChar(' ');
-    out.write(toBytes);
-    out.writeChar(' ');
-    out.write(messageBytes.length);
-    out.writeChar(' ');
-    out.write(messageBytes);
+    synchronized (out) {
+      out.writeInt(DIRECT_MESSAGE);
+      out.writeChar(' ');
+      byte[] fromBytes = from.getBytes(StandardCharsets.UTF_8);
+      byte[] toBytes = to.getBytes(StandardCharsets.UTF_8);
+      byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(fromBytes.length);
+      out.writeChar(' ');
+      out.write(fromBytes);
+      out.writeChar(' ');
+      out.writeInt(toBytes.length);
+      out.writeChar(' ');
+      out.write(toBytes);
+      out.writeChar(' ');
+      out.write(messageBytes.length);
+      out.writeChar(' ');
+      out.write(messageBytes);
+      System.out.println(message);
+    }
   }
 
-  public synchronized void broadcastMessage(String from, String message) throws IOException {
-    out.writeInt(BROADCAST_MESSAGE);
-    out.writeChar(' ');
-    byte[] fromInBytes = from.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(fromInBytes.length);
-    out.writeChar(' ');
-    out.write(fromInBytes);
-    out.writeChar(' ');
-    byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-    out.writeInt(messageBytes.length);
-    out.writeChar(' ');
-    out.write(messageBytes);
+  public void broadcastMessage(String from, String message) throws IOException {
+    synchronized (out) {
+      out.writeInt(BROADCAST_MESSAGE);
+      out.writeChar(' ');
+      byte[] fromInBytes = from.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(fromInBytes.length);
+      out.writeChar(' ');
+      out.write(fromInBytes);
+      out.writeChar(' ');
+      byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+      out.writeInt(messageBytes.length);
+      out.writeChar(' ');
+      out.write(messageBytes);
+    }
   }
 
   public synchronized void sendInsult(String from, String to) throws IOException {
-    out.writeInt(SEND_INSULT);
-    out.writeChar(' ');
-    out.writeInt(from.getBytes(StandardCharsets.UTF_8).length);
-    out.writeChar(' ');
-    out.write(from.getBytes(StandardCharsets.UTF_8));
-    out.writeChar(' ');
-    out.writeInt(to.getBytes(StandardCharsets.UTF_8).length);
-    out.writeChar(' ');
-    out.write(to.getBytes(StandardCharsets.UTF_8));
+    synchronized (out) {
+      out.writeInt(SEND_INSULT);
+      out.writeChar(' ');
+      out.writeInt(from.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(from.getBytes(StandardCharsets.UTF_8));
+      out.writeChar(' ');
+      out.writeInt(to.getBytes(StandardCharsets.UTF_8).length);
+      out.writeChar(' ');
+      out.write(to.getBytes(StandardCharsets.UTF_8));
+    }
   }
 
 
