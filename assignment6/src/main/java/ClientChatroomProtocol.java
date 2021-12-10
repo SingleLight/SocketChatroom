@@ -51,6 +51,10 @@ public class ClientChatroomProtocol {
       byte[] messageInBytes = new byte[messageSize];
       in.read(messageInBytes);
       System.out.println(new String(messageInBytes));
+      if (new String(messageInBytes).startsWith("Connection failed")) {
+        running = false;
+        System.exit(0);
+      }
       this.myState = (isConnected) ? state.CONNECTED : state.NOT_CONNECTED;
       if (isConnected) {
         username = usernameToBe;
@@ -67,6 +71,7 @@ public class ClientChatroomProtocol {
       if (message.startsWith("Success")) {
         running = false;
         this.myState = state.NOT_CONNECTED;
+        System.out.println("here");
         System.exit(0);
         return true;
       } else {

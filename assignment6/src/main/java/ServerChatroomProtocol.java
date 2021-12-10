@@ -28,18 +28,6 @@ public class ServerChatroomProtocol {
     this.sharedBuffers = sharedBuffers;
   }
 
-  public synchronized static void writeToUserConsole(String username,
-      ConcurrentHashMap<String, DataOutputStream> sharedBuffers, String message) {
-    try {
-      DataOutputStream eachOut = sharedBuffers.get(username);
-      synchronized (eachOut) {
-        eachOut.write(message.getBytes(StandardCharsets.UTF_8));
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
   public void serverProcess() throws IOException {
     while (running) {
       int messageType = in.readInt();
@@ -66,8 +54,8 @@ public class ServerChatroomProtocol {
     String message = "";
 
     if (sharedBuffers.containsKey(name)) {
-      writeToUserConsole(new String(username), sharedBuffers, "The user name is already used");
       message = "Connection failed because the username is already used";
+      running = false;
     } else {
       sharedBuffers.put(name, out);
       success = true;
@@ -105,6 +93,7 @@ public class ServerChatroomProtocol {
         out.writeInt(messageBytes.length);
         out.writeChar(' ');
         out.write(messageBytes);
+        sharedBuffers.remove(username);
         running = false;
       } else {
         String message = "Failure! You are not disconnected due to incorrectly provided username";
@@ -228,6 +217,7 @@ public class ServerChatroomProtocol {
   public void sendDirectMessage(String from, String to, String message) throws IOException {
     DataOutputStream out = sharedBuffers.get(to);
     synchronized (out) {
+      out.writeInt(DIRECT_MESSAGE);
       out.writeChar(' ');
       out.writeInt(from.getBytes(StandardCharsets.UTF_8).length);
       out.writeChar(' ');
@@ -245,10 +235,7 @@ public class ServerChatroomProtocol {
 
   public void sendBroadcastMessage(String from, String message) throws IOException {
     for (String key : sharedBuffers.keySet()) {
-      if (!key.equals(from)) {
-        sendDirectMessage(from, key, message);
-
-      }
+      sendDirectMessage(from, key, message);
     }
   }
 

@@ -16,7 +16,7 @@ public class ClientInterface {
   private DataOutputStream out;
   private DataInputStream in;
   private ClientChatroomProtocol protocol;
-  private boolean running = true;
+  private Boolean running = true;
 
   public ClientInterface(String hostName, int portNumber, String clientName) {
     this.HOST_NAME = hostName;
@@ -29,7 +29,7 @@ public class ClientInterface {
   public static void main(String[] args) throws IOException {
     Scanner scanner = new Scanner(System.in);
     String line;
-    ClientInterface ci = new ClientInterface("localhost", 3000, "Bob1");
+    ClientInterface ci = new ClientInterface("localhost", 3000, "Bob10");
     while (ci.running) {
       line = scanner.nextLine();
       ci.commandParser(line);
