@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatroomServerThread implements Runnable {
 
+  private static final String SOCKET_CLOSED = "Socket closed";
   private final ConcurrentHashMap<String, DataOutputStream> sharedBuffers;
   private final Socket socket;
   private final ServerChatroomProtocol protocol;
@@ -23,7 +24,7 @@ public class ChatroomServerThread implements Runnable {
     try {
       protocol.serverProcess();
       socket.close();
-      System.out.println("Socket closed");
+      System.out.println(SOCKET_CLOSED);
     } catch (IOException e) {
       e.printStackTrace();
     }

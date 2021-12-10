@@ -10,6 +10,17 @@ public class ClientInterface {
   private static final String WHO = "who";
   private static final String DM_USER = "@user";
   private static final String INSULT = "!user";
+  private static final String ESTABLISHED_CONNECTION = "Socket connection established";
+  private static final String CONNECTION_FAILED = "Connection failed";
+  private static final String LOG_OFF_PROMPT = "Use logoff to logoff";
+  private static final String QUERY_USER_PROMPT = "Use who to see the connected users";
+  private static final String DM_PROMPT = "Use @user [username] [message] to send a direct message to a user";
+  private static final String ALL_PROMPT = "Type anything else in the console to send to all users";
+  private static final String INSULT_PROMPT = "Use !user [username] to send an insult to a user";
+  private static final String WHITESPACE = " ";
+  private static final String HELP = "?";
+  private static final int DM_SPLIT = 3;
+  private static final int INSULT_SPLIT = 2;
   private final String HOST_NAME;
   private final int PORT_NUMBER;
   private final String CLIENT_NAME;
@@ -23,16 +34,20 @@ public class ClientInterface {
     this.PORT_NUMBER = portNumber;
     this.CLIENT_NAME = clientName;
     connect();
-    System.out.println("Socket connection established");
+    System.out.println(ESTABLISHED_CONNECTION);
   }
 
   public static void main(String[] args) throws IOException {
+    ClientInterface ci = new ClientInterface(args[0], Integer.parseInt(args[1]), args[2]);
+    ci.task();
+  }
+
+  public void task() throws IOException {
     Scanner scanner = new Scanner(System.in);
     String line;
-    ClientInterface ci = new ClientInterface("localhost", 3000, "Bob10");
-    while (ci.running) {
+    while (running) {
       line = scanner.nextLine();
-      ci.commandParser(line);
+      commandParser(line);
     }
   }
 
@@ -47,7 +62,7 @@ public class ClientInterface {
       clientListener.start();
     } catch (IOException e) {
       e.printStackTrace();
-      System.out.println("Connection failed");
+      System.out.println(CONNECTION_FAILED);
     }
   }
 
@@ -73,10 +88,11 @@ public class ClientInterface {
   }
 
   private void help() {
-    System.out.println("Use logoff to logoff");
-    System.out.println("Use who to see the connected users");
-    System.out.println("Use @user [username] [message] to send a direct message to a user");
-    System.out.println("Use !user [username] to send an insult to a user");
+    System.out.println(LOG_OFF_PROMPT);
+    System.out.println(QUERY_USER_PROMPT);
+    System.out.println(DM_PROMPT);
+    System.out.println(INSULT_PROMPT);
+    System.out.println(ALL_PROMPT);
   }
 
   private void commandParser(String command) throws IOException {
@@ -85,16 +101,15 @@ public class ClientInterface {
     } else if (command.startsWith(WHO)) {
       listAllUsers(CLIENT_NAME);
     } else if (command.startsWith(DM_USER)) {
-      String[] commandArr = command.split(" ", 3);
+      String[] commandArr = command.split(WHITESPACE, DM_SPLIT);
       directMessage(CLIENT_NAME, commandArr[1], commandArr[2]);
     } else if (command.startsWith(INSULT)) {
-      String[] commandArr = command.split(" ", 2);
+      String[] commandArr = command.split(WHITESPACE, INSULT_SPLIT);
       sendInsult(CLIENT_NAME, commandArr[1]);
-    } else if (command.startsWith("?")) {
+    } else if (command.startsWith(HELP)) {
       help();
     } else {
       broadcastMessage(CLIENT_NAME, command);
     }
   }
-
 }
