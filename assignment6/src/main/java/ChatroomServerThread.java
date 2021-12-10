@@ -23,6 +23,7 @@ public class ChatroomServerThread implements Runnable {
     try {
       protocol.serverProcess();
       socket.close();
+      System.out.println("Socket closed");
     } catch (IOException e) {
       e.printStackTrace();
     }

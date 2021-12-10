@@ -29,7 +29,7 @@ public class ClientInterface {
   public static void main(String[] args) throws IOException {
     Scanner scanner = new Scanner(System.in);
     String line;
-    ClientInterface ci = new ClientInterface("localhost", 3000, "Bobb");
+    ClientInterface ci = new ClientInterface("localhost", 3000, "Bob1");
     while (ci.running) {
       line = scanner.nextLine();
       ci.commandParser(line);

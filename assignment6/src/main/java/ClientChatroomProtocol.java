@@ -36,6 +36,7 @@ public class ClientChatroomProtocol {
         case CONNECT_RESPONSE -> processConnectResponse();
         case DIRECT_MESSAGE -> processDirectMessage();
         case QUERY_USER_RESPONSE -> processQueryUsers();
+        case FAIL_MESSAGE -> processFailedMessage();
       }
     }
   }
@@ -90,7 +91,7 @@ public class ClientChatroomProtocol {
     in.readChar();
     byte[] messageInBytes = new byte[messageSize];
     in.read(messageInBytes);
-    System.out.println("Message from" + new String(fromUsernameInBytes) + " to " + new String(toUsernameInBytes) + " : " + new String(messageInBytes));
+    System.out.println("Message from " + new String(fromUsernameInBytes) + " to " + new String(toUsernameInBytes) + " : " + new String(messageInBytes));
   }
 
   private void processQueryUsers() throws IOException {
@@ -107,6 +108,15 @@ public class ClientChatroomProtocol {
       allTheUsers.append(new String(usernameInBytes)).append(" ");
     }
     System.out.println(allTheUsers);
+  }
+
+  public void processFailedMessage() throws IOException {
+    in.readChar();
+    int sizeOfMessage = in.readInt();
+    in.readChar();
+    byte[] messageInBytes = new byte[sizeOfMessage];
+    in.read(messageInBytes);
+    System.out.println(new String(messageInBytes));
   }
 
   public void connect(String username) throws IOException {
@@ -159,10 +169,9 @@ public class ClientChatroomProtocol {
       out.writeChar(' ');
       out.write(toBytes);
       out.writeChar(' ');
-      out.write(messageBytes.length);
+      out.writeInt(messageBytes.length);
       out.writeChar(' ');
       out.write(messageBytes);
-      System.out.println(message);
     }
   }
 
@@ -182,7 +191,7 @@ public class ClientChatroomProtocol {
     }
   }
 
-  public synchronized void sendInsult(String from, String to) throws IOException {
+  public void sendInsult(String from, String to) throws IOException {
     synchronized (out) {
       out.writeInt(SEND_INSULT);
       out.writeChar(' ');
