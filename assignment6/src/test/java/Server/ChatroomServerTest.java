@@ -25,5 +25,9 @@ class ChatroomServerTest {
 
   @Test
   void testEquals() {
+    assertEquals(chatroomServer, chatroomServer);
+    assertNotEquals(chatroomServer, new ChatroomServer());
+    assertNotEquals(chatroomServer, null);
+    assertNotEquals(chatroomServer, 1);
   }
 }

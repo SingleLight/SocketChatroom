@@ -77,7 +77,7 @@ public class ServerChatroomProtocol {
    *
    * @throws IOException error in stream read write
    */
-  public void processConnectMessage()
+  private void processConnectMessage()
       throws IOException {
     in.readChar();
     int usernameSize = in.readInt();
@@ -116,7 +116,7 @@ public class ServerChatroomProtocol {
    *
    * @throws IOException error in stream read write
    */
-  public void processDisconnectMessage() throws IOException {
+  private void processDisconnectMessage() throws IOException {
     in.readChar();
     int usernameSize = in.readInt();
     in.readChar();
@@ -213,7 +213,7 @@ public class ServerChatroomProtocol {
    *
    * @throws IOException error in stream read write
    */
-  public void processBroadcastMessage() throws IOException {
+  private void processBroadcastMessage() throws IOException {
     in.readChar();
     int fromUsernameSize = in.readInt();
     in.readChar();
@@ -232,7 +232,7 @@ public class ServerChatroomProtocol {
    *
    * @throws IOException error in stream read write
    */
-  public void processSendInsult() throws IOException {
+  private void processSendInsult() throws IOException {
     in.readChar();
     int fromUsernameSize = in.readInt();
     System.out.println(fromUsernameSize);
@@ -266,7 +266,7 @@ public class ServerChatroomProtocol {
    * @param message message content
    * @throws IOException error in stream read write
    */
-  public void sendFailedMessage(String to, String message) throws IOException {
+  private void sendFailedMessage(String to, String message) throws IOException {
     DataOutputStream out = sharedBuffers.get(to);
     synchronized (out) {
       out.writeInt(FAIL_MESSAGE);
@@ -285,7 +285,7 @@ public class ServerChatroomProtocol {
    * @param message message content
    * @throws IOException error in stream read write
    */
-  public void sendDirectMessage(String from, String to, String message) throws IOException {
+  private void sendDirectMessage(String from, String to, String message) throws IOException {
     DataOutputStream out = sharedBuffers.get(to);
     synchronized (out) {
       out.writeInt(DIRECT_MESSAGE);
@@ -311,7 +311,7 @@ public class ServerChatroomProtocol {
    * @param message message content
    * @throws IOException error in stream read write
    */
-  public void sendBroadcastMessage(String from, String message) throws IOException {
+  private void sendBroadcastMessage(String from, String message) throws IOException {
     for (String key : sharedBuffers.keySet()) {
       sendDirectMessage(from, key, message);
     }

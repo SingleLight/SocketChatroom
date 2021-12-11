@@ -159,7 +159,7 @@ public class ClientChatroomProtocol {
    *
    * @throws IOException error in stream read write
    */
-  public void processFailedMessage() throws IOException {
+  private void processFailedMessage() throws IOException {
     in.readChar();
     int sizeOfMessage = in.readInt();
     in.readChar();
@@ -313,6 +313,9 @@ public class ClientChatroomProtocol {
     return Objects.hash(in, out, running, username, usernameToBe, myState);
   }
 
+  /**
+   * connection status
+   */
   public enum state {
     CONNECTED,
     NOT_CONNECTED
