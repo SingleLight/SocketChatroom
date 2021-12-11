@@ -3,9 +3,12 @@ package Client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
+/**
+ * manages client communication protocols
+ */
 public class ClientChatroomProtocol {
 
   private static final int CONNECT_MESSAGE = 19;
@@ -27,19 +30,27 @@ public class ClientChatroomProtocol {
   private static final char EMPTY_CHAR = ' ';
   private final DataInputStream in;
   private final DataOutputStream out;
-  private final Socket socket;
   private boolean running = true;
   private String username = "";
   private String usernameToBe = "";
   private state myState = state.NOT_CONNECTED;
 
-
-  public ClientChatroomProtocol(DataInputStream in, DataOutputStream out, Socket socket) {
+  /**
+   * constructor
+   *
+   * @param in  input stream
+   * @param out output stream
+   */
+  public ClientChatroomProtocol(DataInputStream in, DataOutputStream out) {
     this.in = in;
     this.out = out;
-    this.socket = socket;
   }
 
+  /**
+   * listens for incoming byte stream and parse it to call the appropriate method
+   *
+   * @throws IOException error in stream read write
+   */
   public void clientProcess() throws IOException {
     while (running) {
       int messageType = in.readInt();
@@ -52,6 +63,12 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * process the connect response and notify the user
+   *
+   * @return if the connection is successful
+   * @throws IOException error in stream read write
+   */
   private boolean processConnectResponse() throws IOException {
     if (myState == state.NOT_CONNECTED) {
       in.readChar();
@@ -90,6 +107,11 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * process direct message from server and print to user
+   *
+   * @throws IOException error in stream read write
+   */
   private void processDirectMessage() throws IOException {
     in.readChar();
     int fromUsernameSize = in.readInt();
@@ -111,6 +133,11 @@ public class ClientChatroomProtocol {
             + COLON + new String(messageInBytes));
   }
 
+  /**
+   * process query user response from server and print to usere
+   *
+   * @throws IOException error in stream read write
+   */
   private void processQueryUsers() throws IOException {
     in.readChar();
     int numberOfOtherUsers = in.readInt();
@@ -127,6 +154,11 @@ public class ClientChatroomProtocol {
     System.out.println(allTheUsers);
   }
 
+  /**
+   * process failed message from server and send to user
+   *
+   * @throws IOException error in stream read write
+   */
   public void processFailedMessage() throws IOException {
     in.readChar();
     int sizeOfMessage = in.readInt();
@@ -136,6 +168,12 @@ public class ClientChatroomProtocol {
     System.out.println(new String(messageInBytes));
   }
 
+  /**
+   * connect to the server
+   *
+   * @param username the username of the client
+   * @throws IOException error in stream read write
+   */
   public void connect(String username) throws IOException {
     synchronized (out) {
       out.writeInt(CONNECT_MESSAGE);
@@ -148,6 +186,12 @@ public class ClientChatroomProtocol {
     usernameToBe = username;
   }
 
+  /**
+   * logoff from the server
+   *
+   * @param name the name of the client
+   * @throws IOException error in stream read write
+   */
   public void logOff(String name) throws IOException {
     synchronized (out) {
       out.writeInt(DISCONNECT_MESSAGE);
@@ -159,6 +203,12 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * ask the server to query all users
+   *
+   * @param username the name of the client
+   * @throws IOException error in stream read write
+   */
   public void listAllUsers(String username) throws IOException {
     synchronized (out) {
       out.writeInt(QUERY_CONNECTED_USERS);
@@ -170,6 +220,14 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * send a direct message to the server
+   *
+   * @param from    from username
+   * @param to      to username
+   * @param message the content of message
+   * @throws IOException error in stream read write
+   */
   public void directMessage(String from, String to, String message)
       throws IOException {
     synchronized (out) {
@@ -192,6 +250,13 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * send a broadcast message to the server
+   *
+   * @param from    from username
+   * @param message the content of the message
+   * @throws IOException error in stream read write
+   */
   public void broadcastMessage(String from, String message) throws IOException {
     synchronized (out) {
       out.writeInt(BROADCAST_MESSAGE);
@@ -208,6 +273,13 @@ public class ClientChatroomProtocol {
     }
   }
 
+  /**
+   * send an insult to a user
+   *
+   * @param from from username
+   * @param to   to username
+   * @throws IOException error in stream read write
+   */
   public void sendInsult(String from, String to) throws IOException {
     synchronized (out) {
       out.writeInt(SEND_INSULT);
@@ -222,9 +294,27 @@ public class ClientChatroomProtocol {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ClientChatroomProtocol that = (ClientChatroomProtocol) o;
+    return running == that.running && in.equals(that.in) && out.equals(that.out) && username.equals(
+        that.username) && usernameToBe.equals(that.usernameToBe)
+        && myState == that.myState;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(in, out, running, username, usernameToBe, myState);
+  }
+
   public enum state {
     CONNECTED,
     NOT_CONNECTED
   }
-
 }
