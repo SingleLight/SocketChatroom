@@ -307,7 +307,7 @@ class ServerChatroomProtocolTest {
     assertEquals(protocol, protocol);
     assertNotEquals(protocol, null);
     assertNotEquals(protocol, 1);
-    assertNotEquals(protocol, protocoll);
+    assertEquals(protocol, protocoll);
   }
 
   @Test

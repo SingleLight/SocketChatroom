@@ -37,7 +37,7 @@ public class ChatroomServer {
   public void task(String[] args) throws IOException {
     if (args.length != 1) {
       System.out.println(NO_PORT);
-      System.exit(1);
+      throw new IllegalArgumentException(NO_PORT);
     }
     ConcurrentHashMap<String, DataOutputStream> sharedBuffers = new ConcurrentHashMap<>();
     int portNumber = Integer.parseInt(args[0]);

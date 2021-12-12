@@ -235,7 +235,6 @@ public class ServerChatroomProtocol {
   private void processSendInsult() throws IOException {
     in.readChar();
     int fromUsernameSize = in.readInt();
-    System.out.println(fromUsernameSize);
     in.readChar();
     byte[] fromUsernameInBytes = new byte[fromUsernameSize];
     in.read(fromUsernameInBytes);
@@ -326,12 +325,11 @@ public class ServerChatroomProtocol {
       return false;
     }
     ServerChatroomProtocol that = (ServerChatroomProtocol) o;
-    return running == that.running && in.equals(that.in) && out.equals(that.out)
-        && sharedBuffers.equals(that.sharedBuffers);
+    return sharedBuffers.equals(that.sharedBuffers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(in, out, sharedBuffers, running);
+    return Objects.hash(sharedBuffers);
   }
 }

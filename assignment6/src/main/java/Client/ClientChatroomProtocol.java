@@ -2,6 +2,7 @@ package Client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -53,12 +54,16 @@ public class ClientChatroomProtocol {
    */
   public void clientProcess() throws IOException {
     while (running) {
-      int messageType = in.readInt();
-      switch (messageType) {
-        case CONNECT_RESPONSE -> processConnectResponse();
-        case DIRECT_MESSAGE -> processDirectMessage();
-        case QUERY_USER_RESPONSE -> processQueryUsers();
-        case FAIL_MESSAGE -> processFailedMessage();
+      try {
+        int messageType = in.readInt();
+        switch (messageType) {
+          case CONNECT_RESPONSE -> processConnectResponse();
+          case DIRECT_MESSAGE -> processDirectMessage();
+          case QUERY_USER_RESPONSE -> processQueryUsers();
+          case FAIL_MESSAGE -> processFailedMessage();
+        }
+      } catch (EOFException e) {
+        break;
       }
     }
   }
@@ -302,22 +307,26 @@ public class ClientChatroomProtocol {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ClientChatroomProtocol that = (ClientChatroomProtocol) o;
-    return running == that.running && in.equals(that.in) && out.equals(that.out) && username.equals(
-        that.username) && usernameToBe.equals(that.usernameToBe)
-        && myState == that.myState;
+    ClientChatroomProtocol protocol = (ClientChatroomProtocol) o;
+    return username.equals(protocol.username);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(in, out, running, username, usernameToBe, myState);
+    return Objects.hash(username);
   }
 
   /**
    * connection status
    */
   public enum state {
+    /**
+     * connected state
+     */
     CONNECTED,
+    /**
+     * disconnected state
+     */
     NOT_CONNECTED
   }
 }

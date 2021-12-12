@@ -3,6 +3,7 @@ package Client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.util.Objects;
 import java.util.Scanner;
@@ -55,6 +56,19 @@ public class ClientInterface {
   }
 
   /**
+   * constructor for when directly providing
+   *
+   * @param socket connection socket
+   */
+  public ClientInterface(Socket socket) {
+    this.HOST_NAME = "";
+    this.PORT_NUMBER = 0;
+    this.CLIENT_NAME = "";
+    connect(socket);
+    System.out.println(ESTABLISHED_CONNECTION);
+  }
+
+  /**
    * main method
    *
    * @param args host name, port number, client name
@@ -63,16 +77,16 @@ public class ClientInterface {
   public static void main(String[] args) throws IOException {
     ClientInterface ci = new ClientInterface(args[HOST_NAME_INDEX],
         Integer.parseInt(args[PORT_NUMBER_INDEX]), args[CLIENT_NAME_INDEX]);
-    ci.task();
+    ci.task(System.in);
   }
 
   /**
-   * read input from user and handles it
-   *
+   * driver for the class
+   * @param in input method
    * @throws IOException error in stream read write
    */
-  public void task() throws IOException {
-    Scanner scanner = new Scanner(System.in);
+  public void task(InputStream in) throws IOException {
+    Scanner scanner = new Scanner(in);
     String line;
     while (running) {
       line = scanner.nextLine();
@@ -86,6 +100,18 @@ public class ClientInterface {
   private void connect() {
     try {
       Socket socket = new Socket(HOST_NAME, PORT_NUMBER);
+      connect(socket);
+    } catch (IOException e) {
+      e.printStackTrace();
+      System.out.println(CONNECTION_FAILED);
+    }
+  }
+
+  /**
+   * connect to the server
+   */
+  private void connect(Socket socket) {
+    try {
       out = new DataOutputStream(socket.getOutputStream());
       in = new DataInputStream(socket.getInputStream());
       this.protocol = new ClientChatroomProtocol(in, out);
@@ -187,6 +213,7 @@ public class ClientInterface {
     }
   }
 
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -196,14 +223,11 @@ public class ClientInterface {
       return false;
     }
     ClientInterface that = (ClientInterface) o;
-    return PORT_NUMBER == that.PORT_NUMBER && HOST_NAME.equals(that.HOST_NAME)
-        && CLIENT_NAME.equals(
-        that.CLIENT_NAME) && out.equals(that.out) && in.equals(that.in) && protocol.equals(
-        that.protocol) && running.equals(that.running);
+    return protocol.equals(that.protocol);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(HOST_NAME, PORT_NUMBER, CLIENT_NAME, out, in, protocol, running);
+    return Objects.hash(protocol);
   }
 }

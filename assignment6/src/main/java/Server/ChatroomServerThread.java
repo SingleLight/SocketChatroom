@@ -55,13 +55,11 @@ public class ChatroomServerThread implements Runnable {
       return false;
     }
     ChatroomServerThread that = (ChatroomServerThread) o;
-    return sharedBuffers.equals(that.sharedBuffers) && socket.equals(that.socket)
-        && protocol.equals(
-        that.protocol);
+    return Objects.equals(sharedBuffers, that.sharedBuffers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(sharedBuffers, socket, protocol);
+    return Objects.hash(sharedBuffers);
   }
 }

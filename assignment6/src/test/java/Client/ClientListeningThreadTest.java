@@ -1,12 +1,10 @@
 package Client;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,11 +13,10 @@ class ClientListeningThreadTest {
 
   @BeforeEach
   void setUp() {
-    DataInputStream in = new DataInputStream(new ByteArrayInputStream("abc".getBytes(
-        StandardCharsets.UTF_8)));
-    DataOutputStream out = new DataOutputStream(new ByteArrayOutputStream());
-    ClientChatroomProtocol protocol = new ClientChatroomProtocol(in, out);
-    this.clientListeningThread = new ClientListeningThread(in, out, protocol);
+    DataInputStream in = mock(DataInputStream.class);
+    DataOutputStream out = mock(DataOutputStream.class);
+    ClientChatroomProtocol protocol = mock(ClientChatroomProtocol.class);
+    clientListeningThread = new ClientListeningThread(in, out, protocol);
   }
 
   @Test

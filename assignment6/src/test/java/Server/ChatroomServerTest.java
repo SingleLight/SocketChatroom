@@ -3,6 +3,7 @@ package Server;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +21,8 @@ class ChatroomServerTest {
   }
 
   @Test
-  void task() {
+  void task() throws IOException {
+    assertThrows(IllegalArgumentException.class, () -> chatroomServer.task(new String[]{}));
   }
 
   @Test

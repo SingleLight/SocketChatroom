@@ -6,6 +6,7 @@
 
 This is a chat room program that implements both the server and client side. The server and client
 communicate with a socket and defined protocols.
+Mockito is used to test part of the program.  
 
 ## How to run the program
 
@@ -131,3 +132,8 @@ Type anything else in the console to send to all users
 logoff
 Success! You are no longer connected
 ```
+
+## Additional information
+
+Broadcast message is implemented using direct message, for
+further information on this please refer to Piazza question #444  

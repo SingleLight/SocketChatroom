@@ -1,7 +1,9 @@
 package Server;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,7 +64,7 @@ class ChatroomServerThreadTest {
     when(socket.getOutputStream()).thenReturn(new DataOutputStream(bOuter));
 
     assertEquals(thread, thread);
-    assertNotEquals(thread, myThread);
+
     assertNotEquals(thread, null);
     assertNotEquals(thread, 1);
   }
