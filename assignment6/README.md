@@ -136,4 +136,7 @@ Success! You are no longer connected
 ## Additional information
 
 Broadcast message is implemented using direct message, for
-further information on this please refer to Piazza question #444  
+further information on this please refer to Piazza question #444_f2 
+
+The run method in ChatroomServerThread is not tested due to usage of socket,
+please refer to Piazza question #446_f1
